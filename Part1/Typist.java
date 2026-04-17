@@ -204,7 +204,7 @@ public class Typist
     /**
      * Sets the symbol used to represent this typist.
      *
-     * @param newSymbol the new symbol character.
+     * @param newSymbol the new symbol character
      */
     public void setSymbol(char newSymbol)
     {
