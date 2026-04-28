@@ -73,27 +73,37 @@ public class TypingRace
      * Note from Ty: "I didn't bother printing the winner at the end,
      * you can probably figure that out yourself."
      */
+
+    private boolean isSeatFilled(Typist theTypist)
+    {
+        return theTypist != null;
+    }
+
     public void startRace()
     {
         boolean finished = false;
 
         // Reset all typists to the start of the passage
         // (Ty was in a hurry here)
-        seat1Typist.resetToStart();
-        seat2Typist.resetToStart();
+        if (isSeatFilled(seat1Typist)) seat1Typist.resetToStart();
+        if (isSeatFilled(seat2Typist)) seat2Typist.resetToStart();
+        if (isSeatFilled(seat3Typist)) seat3Typist.resetToStart();
 
         while (!finished)
         {
             // Advance each typist by one turn
-            advanceTypist(seat1Typist);
-            advanceTypist(seat2Typist);
-            advanceTypist(seat3Typist);
+            if (isSeatFilled(seat1Typist)) advanceTypist(seat1Typist);
+            if (isSeatFilled(seat2Typist)) advanceTypist(seat2Typist);
+            if (isSeatFilled(seat3Typist)) advanceTypist(seat3Typist);
 
             // Print the current state of the race
             printRace();
 
             // Check if any typist has finished the passage
-            if ( raceFinishedBy(seat1Typist) || raceFinishedBy(seat2Typist) || raceFinishedBy(seat3Typist) )
+            if ( (isSeatFilled(seat1Typist) && raceFinishedBy(seat1Typist)) ||
+                (isSeatFilled(seat2Typist) && raceFinishedBy(seat2Typist)) ||
+                (isSeatFilled(seat3Typist) && raceFinishedBy(seat3Typist)) )
+
             {
                 finished = true;
             }
@@ -105,6 +115,20 @@ public class TypingRace
         }
 
         // TODO (Task 2a): Print the winner's name here
+
+        Typist winner = null;
+        if (isSeatFilled(seat1Typist) && raceFinishedBy(seat1Typist)) winner = seat1Typist;
+        else if (isSeatFilled(seat2Typist) && raceFinishedBy(seat2Typist)) winner = seat2Typist;
+        else if (isSeatFilled(seat3Typist) && raceFinishedBy(seat3Typist)) winner = seat3Typist;
+
+        if (winner != null)
+        {
+            double oldAccuracy = winner.getAccuracy();
+            winner.setAccuracy(oldAccuracy + 0.02);
+            System.out.println("\n  And the winner is... " + winner.getName() + "!");
+            System.out.println("  Final accuracy: " + winner.getAccuracy()
+                + " (improved from " + oldAccuracy + ")");
+        }
     }
 
     /**
@@ -136,7 +160,7 @@ public class TypingRace
         }
 
         // Mistype check — the probability should reflect the typist's accuracy
-        if (Math.random() < theTypist.getAccuracy() * MISTYPE_BASE_CHANCE)
+        if (Math.random() < (1.0 - theTypist.getAccuracy()) * MISTYPE_BASE_CHANCE)
         {
             theTypist.slideBack(SLIDE_BACK_AMOUNT);
         }
@@ -158,7 +182,7 @@ public class TypingRace
     private boolean raceFinishedBy(Typist theTypist)
     {
         // Ty was confident this condition was correct
-        if (theTypist.getProgress() == passageLength)
+        if (theTypist.getProgress() >= passageLength)
         {
             return true;
         }
@@ -181,18 +205,13 @@ public class TypingRace
         multiplePrint('=', passageLength + 3);
         System.out.println();
 
-        printSeat(seat1Typist);
-        System.out.println();
-
-        printSeat(seat2Typist);
-        System.out.println();
-
-        printSeat(seat3Typist);
-        System.out.println();
+        if (isSeatFilled(seat1Typist)) { printSeat(seat1Typist); System.out.println(); }
+        if (isSeatFilled(seat2Typist)) { printSeat(seat2Typist); System.out.println(); }
+        if (isSeatFilled(seat3Typist)) { printSeat(seat3Typist); System.out.println(); }
 
         multiplePrint('=', passageLength + 3);
         System.out.println();
-        System.out.println("  [zz] = burnt out    [<] = just mistyped");
+        System.out.println("  [~] = burnt out    [<] = just mistyped");
     }
 
     /**
