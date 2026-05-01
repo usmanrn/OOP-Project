@@ -1,6 +1,5 @@
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.text.*;
@@ -220,10 +219,20 @@ public class RaceScreen extends JFrame {
     private void showResults(int winnerIndex) {
         long elapsedMs = System.currentTimeMillis() - raceStartTime;
 
+        // sort by who got furthest
         Integer[] order = new Integer[typists.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
-        Arrays.sort(order, (a, b) ->
-            Integer.compare(typists.get(b).getProgress(), typists.get(a).getProgress()));
+
+        // bubble sorting to find the furthest
+        for (int i = 0; i < order.length - 1; i++) {
+            for (int j = 0; j < order.length - 1 - i; j++) {
+                int temp = order[j];
+                if (typists.get(order[j]).getProgress() < typists.get(order[j+1]).getProgress()) {
+                    order[j] = order[j+1];
+                    order[j+1] = temp;
+                }
+            }
+        }
 
         List<RaceRecord> results  = new ArrayList<>();
         StatsManager   stats     = StatsManager.getInstance();

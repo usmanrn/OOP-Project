@@ -161,4 +161,9 @@ public class TypingRaceGUI
     {
         new TypingRaceGUI();
     }
+
+    public static void startRaceGUI()
+    {
+        main(new String[0]);
+    }
 }
