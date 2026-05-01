@@ -44,7 +44,7 @@ public class TypingRaceGUI
         JPanel settingsPanel = new JPanel(new GridLayout(4, 1, 10, 10));
         settingsPanel.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
 
-        // --- Passage Selection ---
+        // passage selection 
         JPanel passagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         passagePanel.setBorder(BorderFactory.createTitledBorder("Passage Selection"));
 

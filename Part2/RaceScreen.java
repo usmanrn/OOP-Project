@@ -181,7 +181,6 @@ public class RaceScreen extends JFrame {
         double speedMod     = (caffeineMode && turn <= 10) ? 1.25 : 1.0;
         double effectiveAcc = Math.min(0.99, Math.max(0.01, t.getAccuracy() + accMod));
 
-        // Track keystrokes
         totalKeystrokes[i]++;
         if (Math.random() < effectiveAcc * cfg.speedMultiplier * speedMod) {
             t.typeCharacter();
@@ -221,15 +220,14 @@ public class RaceScreen extends JFrame {
     private void showResults(int winnerIndex) {
         long elapsedMs = System.currentTimeMillis() - raceStartTime;
 
-        // Sort by progress to get positions
         Integer[] order = new Integer[typists.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
         Arrays.sort(order, (a, b) ->
             Integer.compare(typists.get(b).getProgress(), typists.get(a).getProgress()));
 
-        // Build records and save to StatsManager
-        List<RaceRecord> results = new ArrayList<>();
-        StatsManager stats = StatsManager.getInstance();
+        List<RaceRecord> results  = new ArrayList<>();
+        StatsManager   stats     = StatsManager.getInstance();
+        RewardManager  rewards   = RewardManager.getInstance();
 
         for (int rank = 0; rank < order.length; rank++) {
             int i    = order[rank];
@@ -243,15 +241,27 @@ public class RaceScreen extends JFrame {
             double accBefore = accuracyBefore[i];
             double accAfter  = t.getAccuracy();
 
-            // Winner gets accuracy boost
             if (i == winnerIndex) {
                 t.setAccuracy(accAfter + 0.02);
                 accAfter = t.getAccuracy();
             }
 
+            int position = rank + 1;
+
+            // Option A: points + badges
+            int pts = rewards.calculatePoints(position, wpm, burnoutCounts[i]);
+            rewards.addPoints(t.getName(), pts);
+            rewards.updateBadges(t.getName(), position, burnoutCounts[i]);
+
+            // Option B: earnings
+            int coins = rewards.calculateEarnings(
+                position, wpm, burnoutCounts[i],
+                configs.get(i).sponsorIndex, accPct);
+            rewards.addEarnings(t.getName(), coins);
+
             RaceRecord record = new RaceRecord(
                 t.getName(), wpm, accPct,
-                burnoutCounts[i], accBefore, accAfter, rank + 1
+                burnoutCounts[i], accBefore, accAfter, position
             );
             results.add(record);
             stats.addRecord(record);

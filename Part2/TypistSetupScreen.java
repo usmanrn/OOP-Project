@@ -16,6 +16,7 @@ public class TypistSetupScreen extends JFrame {
     private final List<Color>             chosenColours   = new ArrayList<>();
     private final List<JComboBox<String>> styleBoxes      = new ArrayList<>();
     private final List<JComboBox<String>> keyboardBoxes   = new ArrayList<>();
+    private final List<JComboBox<String>> sponsorBoxes    = new ArrayList<>();
     private final List<JCheckBox>         wristChecks     = new ArrayList<>();
     private final List<JCheckBox>         drinkChecks     = new ArrayList<>();
     private final List<JCheckBox>         headphoneChecks = new ArrayList<>();
@@ -54,7 +55,7 @@ public class TypistSetupScreen extends JFrame {
         add(buildCards(), BorderLayout.CENTER);
         add(buildFooter(), BorderLayout.SOUTH);
 
-        setSize(600, 150 + seatCount * 180);
+        setSize(600, 150 + seatCount * 210);
         setLocationRelativeTo(null);
         setVisible(true);
     }
@@ -62,11 +63,9 @@ public class TypistSetupScreen extends JFrame {
     private JScrollPane buildCards() {
         JPanel container = new JPanel();
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-
         for (int i = 0; i < seatCount; i++) {
             container.add(buildCard(i));
         }
-
         return new JScrollPane(container);
     }
 
@@ -100,31 +99,36 @@ public class TypistSetupScreen extends JFrame {
         styleBoxes.add(styleBox);
         card.add(styleBox);
 
-        card.add(new JLabel("  Touch Typist=+0.10acc  Hunt&Peck=-0.20acc"));
-        card.add(new JLabel("  PhoneThumbs=-0.10acc  Voice=-0.05acc"));
+        card.add(new JLabel("  Touch=+0.10  Hunt&Peck=-0.20"));
+        card.add(new JLabel("  Phone=-0.10  Voice=-0.05"));
 
         card.add(new JLabel("Keyboard:"));
         JComboBox<String> kbBox = new JComboBox<>(KEYBOARDS);
         keyboardBoxes.add(kbBox);
         card.add(kbBox);
 
-        card.add(new JLabel("  Mechanical=+0.05acc  Membrane=none"));
-        card.add(new JLabel("  Touchscreen=-0.10acc  Steno=+0.15acc"));
+        card.add(new JLabel("  Mechanical=+0.05  Membrane=none"));
+        card.add(new JLabel("  Touchscreen=-0.10  Steno=+0.15"));
+
+        card.add(new JLabel("Sponsor (Option B):"));
+        JComboBox<String> sponsorBox = new JComboBox<>(RewardManager.SPONSOR_NAMES);
+        sponsorBoxes.add(sponsorBox);
+        card.add(sponsorBox);
 
         card.add(new JLabel("Accessories:"));
         card.add(new JLabel(""));
 
-        JCheckBox wrist = new JCheckBox("Wrist Support (burnout duration -1)");
+        JCheckBox wrist = new JCheckBox("Wrist Support (burnout -1 turn)");
         wristChecks.add(wrist);
         card.add(wrist);
         card.add(new JLabel(""));
 
-        JCheckBox drink = new JCheckBox("Energy Drink (+0.10 acc first half, -0.10 second)");
+        JCheckBox drink = new JCheckBox("Energy Drink (+0.10 first half, -0.10 second)");
         drinkChecks.add(drink);
         card.add(drink);
         card.add(new JLabel(""));
 
-        JCheckBox phones = new JCheckBox("Headphones (mistype chance x0.75)");
+        JCheckBox phones = new JCheckBox("Headphones (mistype x0.75)");
         headphoneChecks.add(phones);
         card.add(phones);
         card.add(new JLabel(""));
@@ -164,6 +168,7 @@ public class TypistSetupScreen extends JFrame {
 
             int si = styleBoxes.get(i).getSelectedIndex();
             int ki = keyboardBoxes.get(i).getSelectedIndex();
+            int sp = sponsorBoxes.get(i).getSelectedIndex();
 
             double acc = 0.75 + STYLE_ACC_DELTA[si] + KB_ACC_DELTA[ki];
             if (nightShift) acc -= 0.08;
@@ -176,7 +181,8 @@ public class TypistSetupScreen extends JFrame {
                 KB_MISTYPE_MULT[ki],
                 wristChecks.get(i).isSelected(),
                 drinkChecks.get(i).isSelected(),
-                headphoneChecks.get(i).isSelected()
+                headphoneChecks.get(i).isSelected(),
+                sp
             ));
         }
 

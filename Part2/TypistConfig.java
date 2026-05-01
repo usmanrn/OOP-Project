@@ -12,10 +12,12 @@ public class TypistConfig {
     public final boolean hasWristSupport;
     public final boolean hasEnergyDrink;
     public final boolean hasHeadphones;
+    public final int     sponsorIndex;   // 0 = none
 
     public TypistConfig(char symbol, String name, double baseAccuracy, Color colour,
                         double burnoutMultiplier, double speedMultiplier, double mistypeMultiplier,
-                        boolean hasWristSupport, boolean hasEnergyDrink, boolean hasHeadphones)
+                        boolean hasWristSupport, boolean hasEnergyDrink, boolean hasHeadphones,
+                        int sponsorIndex)
     {
         this.symbol            = symbol;
         this.name              = name;
@@ -27,6 +29,7 @@ public class TypistConfig {
         this.hasWristSupport   = hasWristSupport;
         this.hasEnergyDrink    = hasEnergyDrink;
         this.hasHeadphones     = hasHeadphones;
+        this.sponsorIndex      = sponsorIndex;
     }
 
     public double effectiveMistypeMultiplier() {
