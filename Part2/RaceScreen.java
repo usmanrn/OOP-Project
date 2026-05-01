@@ -17,6 +17,9 @@ public class RaceScreen extends JFrame {
 
     private List<Typist> typists;
     private int[]        burnoutCounts;
+    private int[]        totalKeystrokes;
+    private int[]        mistypeCounts;
+    private double[]     accuracyBefore;
     private long         raceStartTime;
 
     private JTextPane[] passagePanes;
@@ -37,10 +40,17 @@ public class RaceScreen extends JFrame {
     }
 
     private void buildTypists() {
-        typists       = new ArrayList<>();
-        burnoutCounts = new int[configs.size()];
-        for (TypistConfig cfg : configs) {
+        int n = configs.size();
+        typists         = new ArrayList<>();
+        burnoutCounts   = new int[n];
+        totalKeystrokes = new int[n];
+        mistypeCounts   = new int[n];
+        accuracyBefore  = new double[n];
+
+        for (int i = 0; i < n; i++) {
+            TypistConfig cfg = configs.get(i);
             typists.add(new Typist(cfg.symbol, cfg.name, cfg.baseAccuracy));
+            accuracyBefore[i] = cfg.baseAccuracy;
         }
     }
 
@@ -66,7 +76,6 @@ public class RaceScreen extends JFrame {
                 configs.get(i).name + " " + configs.get(i).symbol
                 + "  (acc: " + String.format("%.2f", configs.get(i).baseAccuracy) + ")"));
 
-            // Passage text pane showing highlighted progress
             JTextPane pane = new JTextPane();
             pane.setText(passage);
             pane.setEditable(false);
@@ -74,7 +83,6 @@ public class RaceScreen extends JFrame {
             passagePanes[i] = pane;
             row.add(new JScrollPane(pane), BorderLayout.CENTER);
 
-            // Status label showing WPM / burnout
             JLabel status = new JLabel("Ready");
             status.setPreferredSize(new Dimension(200, 20));
             statusLabels[i] = status;
@@ -84,15 +92,13 @@ public class RaceScreen extends JFrame {
             lanePanel.add(Box.createVerticalStrut(6));
         }
 
-        JScrollPane scroll = new JScrollPane(lanePanel);
-        add(scroll, BorderLayout.CENTER);
+        add(new JScrollPane(lanePanel), BorderLayout.CENTER);
 
         setSize(800, 160 + n * 130);
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
-    // Highlights completed characters in the typist's colour
     private void updateHighlight(int i, int progress) {
         JTextPane pane = passagePanes[i];
         Highlighter highlighter = pane.getHighlighter();
@@ -175,6 +181,8 @@ public class RaceScreen extends JFrame {
         double speedMod     = (caffeineMode && turn <= 10) ? 1.25 : 1.0;
         double effectiveAcc = Math.min(0.99, Math.max(0.01, t.getAccuracy() + accMod));
 
+        // Track keystrokes
+        totalKeystrokes[i]++;
         if (Math.random() < effectiveAcc * cfg.speedMultiplier * speedMod) {
             t.typeCharacter();
         }
@@ -185,6 +193,8 @@ public class RaceScreen extends JFrame {
         if (autocorrect) mistypeChance *= 0.5;
         if (Math.random() < mistypeChance) {
             t.slideBack(autocorrect ? 1 : 2);
+            mistypeCounts[i]++;
+            totalKeystrokes[i]++;
         }
 
         double burnoutChance = 0.05 * effectiveAcc * effectiveAcc * cfg.burnoutMultiplier;
@@ -199,7 +209,6 @@ public class RaceScreen extends JFrame {
                           double[] acc, long elapsedMs) {
         for (int i = 0; i < typists.size(); i++) {
             updateHighlight(i, progress[i]);
-
             if (burnt[i]) {
                 statusLabels[i].setText("BURNT OUT (" + burnoutTurns[i] + " turns remaining)");
             } else {
@@ -212,32 +221,46 @@ public class RaceScreen extends JFrame {
     private void showResults(int winnerIndex) {
         long elapsedMs = System.currentTimeMillis() - raceStartTime;
 
-        Typist winner = typists.get(winnerIndex);
-        double oldAcc = winner.getAccuracy();
-        winner.setAccuracy(oldAcc + 0.02);
-
-        headerLabel.setText("Winner: " + winner.getName() + "! ("
-            + String.format("%.2f", elapsedMs / 1000.0) + "s)");
-
+        // Sort by progress to get positions
         Integer[] order = new Integer[typists.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
         Arrays.sort(order, (a, b) ->
             Integer.compare(typists.get(b).getProgress(), typists.get(a).getProgress()));
 
-        StringBuilder sb = new StringBuilder("Results:\n\n");
+        // Build records and save to StatsManager
+        List<RaceRecord> results = new ArrayList<>();
+        StatsManager stats = StatsManager.getInstance();
+
         for (int rank = 0; rank < order.length; rank++) {
             int i    = order[rank];
             Typist t = typists.get(i);
+
             double wpm = (t.getProgress() / 5.0) / Math.max(0.001, elapsedMs / 60000.0);
-            sb.append((rank + 1)).append(". ")
-              .append(t.getName())
-              .append(" — WPM: ").append(String.format("%.0f", wpm))
-              .append(", Burnouts: ").append(burnoutCounts[i])
-              .append(", Final acc: ").append(String.format("%.3f", t.getAccuracy()))
-              .append("\n");
+
+            double accPct = totalKeystrokes[i] == 0 ? 100.0
+                : ((totalKeystrokes[i] - mistypeCounts[i]) / (double) totalKeystrokes[i]) * 100.0;
+
+            double accBefore = accuracyBefore[i];
+            double accAfter  = t.getAccuracy();
+
+            // Winner gets accuracy boost
+            if (i == winnerIndex) {
+                t.setAccuracy(accAfter + 0.02);
+                accAfter = t.getAccuracy();
+            }
+
+            RaceRecord record = new RaceRecord(
+                t.getName(), wpm, accPct,
+                burnoutCounts[i], accBefore, accAfter, rank + 1
+            );
+            results.add(record);
+            stats.addRecord(record);
         }
 
-        JOptionPane.showMessageDialog(this, sb.toString(), "Race Over",
-            JOptionPane.INFORMATION_MESSAGE);
+        headerLabel.setText("Winner: " + typists.get(winnerIndex).getName() + "! ("
+            + String.format("%.2f", elapsedMs / 1000.0) + "s)");
+
+        dispose();
+        new StatsScreen(results);
     }
 }
